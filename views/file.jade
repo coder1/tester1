@@ -1,0 +1,30 @@
+extends layout
+
+block content
+
+   div#trainer Words Trainer
+     div
+       table#accents
+        tbody
+         tr
+  
+     input#entry
+
+     div#control # of training words
+      h1#remaining_words 0
+      h2#current_word(onclick = 'handle_hint(1000)')
+      div.level2#hint _
+      
+   div#history History
+    table.tg
+     thead
+      tr
+       th Success
+       th Failed
+     tbody#tb1
+      tr
+       td#success_counter 0
+       td#failed_counter 0
+   div#exams(style = "width:20%") Exams
+    div#listofexams  
+    

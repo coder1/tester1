@@ -1,0 +1,175 @@
+doctype html
+html
+  head
+    title= title
+    script(src='/jquery-1.10.2.js')
+    script(src='/mustache.js')
+    script(src='/underscore.js')
+    script(src='/math.js')  
+    script.
+     
+     function remove_accents(){
+      $("#accents td").remove();
+     }
+
+     function add_accent(str){
+      $("#accents tr").append("<td><div>" + str + "</div></td>")
+                        .click(function(e){
+                                     console.error("click");
+                                     t = $('#entry');  
+                                     t.val(t.val() + e.target.textContent)
+                                    });
+     }
+
+     function is_accented(str){
+        pattern = new RegExp("^[a-z , A-Z]+$");
+        return !pattern.test(str);
+     }
+
+     function hide_show_accents(str){
+        remove_accents();
+        _(str).each(function(c){
+                      if(is_accented(c)) {
+                        add_accent(c);
+                      }
+                    }); 
+     }
+
+     function reset_test(){
+       failed_words = _($("._td2")).map( function(i){
+          return (i.textContent);
+       });
+       $("#tb1").empty();       
+       if(_.isEmpty(failed_words)) return; 
+       _words.Words = _(_words.Words).reduce(function(memo,item,idx, collection){
+                         if(_(this).find(function(el){return (el == item._FROM)})){
+                          memo.push(item);
+                        }
+                        return memo;
+                       }, new Array(), failed_words);
+      }
+      function run_test(){
+       //reset_test();
+      _words.Words = shuffle(_words.Words);
+      $("#remaining_words").text(_words.Words.length+1);
+      handle_remaining_words();
+     }
+
+     function handle_remaining_words(){
+       el = $("#remaining_words");
+       el_i = parseInt(el.text());
+       if(el_i == 1	){
+       reset_test();
+       el_i = _words.Words.length;
+       }else{
+               --el_i;
+       }
+       if(el_i == 0 ) {
+          $("body").text("finished");
+       }else{
+         el.text(el_i);
+         handle_current_word(); 
+         $("#entry").val("");
+         hide_show_accents($("#hint").text());
+        }
+     }
+     
+     function handle_current_word(){
+       $("#current_word").text(_words.Words[parseInt($("#remaining_words").text())-1]._FROM);
+       handle_hint(0);
+     }
+     
+     function handle_hint(t){
+       $("#hint").text(_words.Words[parseInt($("#remaining_words").text())-1]._TO);
+       hint_show_hide(1);
+       setTimeout("hint_show_hide(2)", t);
+     }
+     
+     function add_history_row(col , s){
+       if(col == 1){
+         if($("._td1:empty").length == 0) $("#tb1").append("<tr>").children().last().append("<td class = _td1>").append("<td class = _td2>");
+         $("._td1:empty").first().text(s);
+       }else{
+         if($("._td2:empty").length == 0) $("#tb1").append("<tr>").children().last().append("<td class = _td1>").append("<td class = _td2>");
+         $("._td2:empty").last().text(s);
+       }
+     }
+
+     function update_score(p){
+      if(p == "success"){
+       c = $("#success_counter").text();
+       c = parseInt(c)+1;
+       $("#success_counter").text(c);
+       add_history_row(1, $("#current_word").text());
+      } else {
+          c = $("#failed_counter").text();
+          c = parseInt(c)+1;
+          $("#failed_counter").text(c); 
+          add_history_row(2, $("#current_word").text());
+      }
+     }
+     function hint_show_hide(v){
+        if(v == 1) $("#hint").show();
+        else $("#hint").hide();
+     }
+     function validate_words(){
+         w = $("#entry").val().trim();
+         c = $("#hint").text().trim();
+         ((w == c) ? ret = true : ret = false);
+         return ret;
+     }
+    
+     function set_color(color){
+      $("#entry").css("color", color);
+     }
+    
+     function check_so_far(){
+       if($("body").text() == "finished") return;
+       w = $("#entry").val().trim();
+       c = $("#hint").text().trim();
+       jQuery.each(_.toArray(w), function(i,el){
+                                                var col = "black";
+                                                if(i <= c.length ){
+                                                 (c[i] == el ?col = "black":col = "red")
+                                                }
+                                                set_color(col);
+                                                if(col == "red") return false;
+                                               });
+       
+     }
+     function shuffle(o){ //v1.0 
+       for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x); 
+          return o; };
+     var _snoop;
+     var _words_from_jade = "#{words}";
+     var _words_json = _words_from_jade.replace(/&quot;/g, '"');
+     var _words ;
+     var _list;
+     var _list_json;
+     
+     function ready(){
+         jQuery.get('/list', null, function(a,b){
+              _list_json = a;
+                $.each(_list_json , function(i,el){
+                                               $('#exams').children().first().append('<h4><a href=./file?n=' + el + '>' + el + '</a></h4>');
+                                             })
+            } , 'json')
+         _words = jQuery.parseJSON(_words_json);
+         var idx=0;
+        _words.idx = function(){return idx++;}
+     }
+     $(document).ready(function(){
+       ready();  
+       $("#entry").keyup(function(e){
+                                     _val = validate_words(); 
+                                     if(e.keyCode == 13){
+                                       (_val ? update_score("success") : update_score("failed"));
+                                       handle_remaining_words();
+                                     }
+                                    })	 
+      run_test();
+      $("#entry").on("keyup", function(e){check_so_far();})
+      })
+    link(rel='stylesheet', href='/stylesheets/style.css')
+  body
+    block content
